@@ -1,9 +1,6 @@
 #!/bin/bash -ex
 
-# 1) Ensure HOME is /home/container by default (but allow override)
-export HOME="${HOME:-/home/container}"
-
-# 2) Always run SteamCMD from $HOME (where it was extracted in the Dockerfile)
+export HOME=/home/container
 cd "$HOME"
 
 # 3) Optional: workshop scenario download via STEAMCMD runscript
@@ -29,7 +26,6 @@ GAMEDIR="$HOME/Steam/steamapps/common/Empyrion - Dedicated Server/DedicatedServe
 
 #Debug Home
 echo "Debug:"
-whoami
 echo $HOME
 pwd
 
