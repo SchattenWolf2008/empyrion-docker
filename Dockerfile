@@ -9,8 +9,10 @@ RUN ln -s '/home/container/Steam/steamapps/common/Empyrion - Dedicated Server/' 
     mkdir /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix && \
     useradd -m user
 
+RUN mkdir -p /home/container && chown -R user:user /home/container
+
 USER user
-ENV HOME /home/container
+ENV HOME=/home/container
 WORKDIR /home/container
 
 RUN curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar xz
