@@ -9,15 +9,19 @@ RUN ln -s '/home/container/Steam/steamapps/common/Empyrion - Dedicated Server/' 
     mkdir /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix && \
     useradd -m user
 
-RUN mkdir -p /home/container && chown -R user:user /home/container
+# create both dirs and give to non-root user
+RUN mkdir -p /home/container /opt/steamcmd && chown -R user:user /home/container /opt/steamcmd
 
 USER user
 ENV HOME=/home/container
-WORKDIR /home/container
 
+# install SteamCMD into /opt/steamcmd (NOT /home/container, which Pterodactyl mounts over)
+WORKDIR /opt/steamcmd
 RUN curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar xz
-# Get's killed at the end
-RUN ./steamcmd.sh +login anonymous +quit || :
+RUN /opt/steamcmd/steamcmd.sh +login anonymous +quit || :
+
+# switch back to the app working dir
+WORKDIR /home/container
 
 EXPOSE 30000/udp
 ADD entrypoint.sh /
