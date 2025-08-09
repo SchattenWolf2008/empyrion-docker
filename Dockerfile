@@ -5,7 +5,7 @@ RUN export DEBIAN_FRONTEND noninteractive && \
     apt-get install -y --no-install-recommends --no-install-suggests net-tools tar unzip curl xvfb locales ca-certificates lib32gcc-s1 wine64 && \
     echo en_US.UTF-8 UTF-8 >> /etc/locale.gen && locale-gen && \
     rm -rf /var/lib/apt/lists/*
-RUN ln -s '/home/user/Steam/steamapps/common/Empyrion - Dedicated Server/' /server && \
+RUN ln -s '/home/container/Steam/steamapps/common/Empyrion - Dedicated Server/' /server && \
     mkdir /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix && \
     useradd -m user
 
