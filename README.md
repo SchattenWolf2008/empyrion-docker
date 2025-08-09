@@ -1,4 +1,4 @@
-# empyrion-server
+# empyrion-server (Pterodactyl Image Fork)
 **Docker image for the [Empyrion](https://empyriongame.com/) dedicated server using WINE**
 
 This Docker image includes WINE and steamcmd, along with an entrypoint script that bootstraps the Empyrion dedicated server installation via steamcmd.
