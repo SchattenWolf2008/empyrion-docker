@@ -6,10 +6,6 @@ export HOME="${HOME:-/home/container}"
 # 2) Always run SteamCMD from $HOME (where it was extracted in the Dockerfile)
 cd "$HOME"
 
-#Debug Home
-whoami
-echo $HOME
-
 # 3) Optional: workshop scenario download via STEAMCMD runscript
 #    (If SCENARIO_WORKSHOP_ID is set, append a +runscript argument)
 if [ -n "$SCENARIO_WORKSHOP_ID" ]; then
