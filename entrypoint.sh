@@ -7,7 +7,8 @@ export HOME="${HOME:-/home/container}"
 cd "$HOME"
 
 #Debug Home
-whoami && echo $HOME && pwd && ls -la
+whoami
+echo $HOME
 
 # 3) Optional: workshop scenario download via STEAMCMD runscript
 #    (If SCENARIO_WORKSHOP_ID is set, append a +runscript argument)
@@ -29,6 +30,12 @@ fi
 
 # 5) Game dir derived from HOME
 GAMEDIR="$HOME/Steam/steamapps/common/Empyrion - Dedicated Server/DedicatedServer"
+
+#Debug Home
+echo "Debug:"
+whoami
+echo $HOME
+pwd
 
 # 6) Install/Update server
 ./steamcmd.sh +@sSteamCmdForcePlatformType windows +login anonymous +app_update 530870 $BETACMD $STEAMCMD +quit
