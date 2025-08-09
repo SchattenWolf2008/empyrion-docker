@@ -30,7 +30,9 @@ echo $HOME
 pwd
 
 # 6) Install/Update server
-./steamcmd.sh +@sSteamCmdForcePlatformType windows +login anonymous +app_update 530870 $BETACMD $STEAMCMD +quit
+STEAMCMD_BIN="/opt/steamcmd/steamcmd.sh"
+"$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows +login anonymous +app_update 530870 $BETACMD $STEAMCMD +quit
+
 
 # 7) Prepare runtime env
 mkdir -p "$GAMEDIR/Logs"
