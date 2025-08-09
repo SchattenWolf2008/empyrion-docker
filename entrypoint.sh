@@ -1,6 +1,6 @@
 #!/bin/bash -ex
 
-GAMEDIR="$HOME/Steam/steamapps/common/Empyrion - Dedicated Server/DedicatedServer"
+GAMEDIR="/home/container/Steam/steamapps/common/Empyrion - Dedicated Server/DedicatedServer"
 
 : ${STEAMCMD}
 BETACMD=
