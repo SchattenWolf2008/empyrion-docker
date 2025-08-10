@@ -3,16 +3,13 @@
 export HOME=/home/container
 cd "$HOME"
 
-# --- helpers ---------------------------------------------------------------
-
-# YAML-safe quoting
+# Helper for YAML escaping
 q() { printf %s "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'; }
 
-# 0/1 -> true/false
+# Helper to convert 0/1 → true/false
 bool() { [ "$1" = "1" ] && echo "true" || echo "false"; }
 
-# --- optional: workshop scenario ------------------------------------------
-
+# Workshop scenario (prepare +runscript for steamcmd)
 if [ -n "$SCENARIO_WORKSHOP_ID" ]; then
   mkdir -p "$HOME/Steam"
   printf 'workshop_download_item 383120 %s\n' "$SCENARIO_WORKSHOP_ID" > "$HOME/Steam/add_scenario.txt"
@@ -23,20 +20,17 @@ if [ -n "$SCENARIO_WORKSHOP_ID" ]; then
   fi
 fi
 
-# --- beta flag -------------------------------------------------------------
-
+# Beta flag
 BETACMD=""
 if [ "$BETA" = "1" ]; then
   BETACMD="-beta experimental"
 fi
 
-# --- paths -----------------------------------------------------------------
-
+# Game dirs
 BASE_DIR="$HOME/Steam/steamapps/common/Empyrion - Dedicated Server"
 GAMEDIR="$BASE_DIR/DedicatedServer"
 
-# --- generate dedicated-generated.yaml from panel vars ---------------------
-
+# === Generate dedicated-generated.yaml from panel vars ===
 CFG_DIR="$BASE_DIR"
 CFG_GEN="$CFG_DIR/dedicated-generated.yaml"
 mkdir -p "$CFG_DIR"
@@ -76,33 +70,68 @@ mkdir -p "$CFG_DIR"
   echo "    CustomScenario: \"$(q "$SCENARIO_NAME")\""
 } > "$CFG_GEN"
 
-# Only pass -dedicated when toggle is on
+# Pass -dedicated only if toggle is 1
 EXTRA_ARGS=""
 if [ "$USE_PANEL_CONFIG" = "1" ]; then
   EXTRA_ARGS="-dedicated $(basename "$CFG_GEN")"
 fi
 
-# --- SteamCMD login flow (always attempt each start) -----------------------
-
+# SteamCMD binary
 STEAMCMD_BIN="/opt/steamcmd/steamcmd.sh"
+
+# --- SteamCMD login flow (token -> full -> anonymous) ----------------------
 UPDATE_LOGIN_ARGS="+login anonymous"   # safe default
+LOGINUSERS="$HOME/Steam/config/loginusers.vdf"
 
 if [ "$STEAM_LOGIN" = "1" ]; then
   if [ -z "$STEAM_USERNAME" ] || [ -z "$STEAM_PASSWORD" ]; then
     echo "[SteamCMD] STEAM_LOGIN=1 but username or password is empty. Using anonymous."
     "$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows +login anonymous +quit || true
   else
-    # First attempt: may request Steam Guard OR mobile confirmation.
-    "$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows \
-      +login "$STEAM_USERNAME" "$STEAM_PASSWORD" +quit | tee /tmp/steam_login.log || true
+    # 1) Try token-based login (no password) if we look logged-in already.
+    TOKEN_OK=0
+    if [ -f "$LOGINUSERS" ] && grep -qi "\"AccountName\"[[:space:]]*\"$STEAM_USERNAME\"" "$LOGINUSERS"; then
+      echo "[SteamCMD] Attempting token login for $STEAM_USERNAME ..."
+      "$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows +login "$STEAM_USERNAME" +quit \
+        | tee /tmp/steam_token_login.log || true
 
-    if grep -qiE 'Steam Guard|Two-factor|requires your authorization code|Please confirm the login in the Steam Mobile app' /tmp/steam_login.log; then
-      # If mobile confirmation was approved, Steam prints "...Waiting for confirmation...OK"
-      if grep -qi 'Waiting for confirmation...OK' /tmp/steam_login.log; then
-        echo "[SteamCMD] Mobile app confirmation detected — login successful."
-        UPDATE_LOGIN_ARGS="+login $STEAM_USERNAME $STEAM_PASSWORD"
+      if ! grep -qiE 'Steam Guard|Two-factor|password|enter your password|requires your authorization code|Please confirm the login in the Steam Mobile app' /tmp/steam_token_login.log; then
+        TOKEN_OK=1
+        UPDATE_LOGIN_ARGS="+login $STEAM_USERNAME"
+        echo "[SteamCMD] Token login OK."
       else
-        # Code-based guard flow
+        echo "[SteamCMD] Token login not valid; will attempt full login."
+      fi
+    fi
+
+    # 2) If token didn’t work, do full login with password.
+    if [ "$TOKEN_OK" != "1" ]; then
+      "$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows \
+        +login "$STEAM_USERNAME" "$STEAM_PASSWORD" +quit \
+        | tee /tmp/steam_login.log || true
+
+      HAS_MOBILE=$(grep -qi 'Please confirm the login in the Steam Mobile app' /tmp/steam_login.log; echo $?)
+      HAS_CODE=$(grep -qiE 'Steam Guard|Two-factor|requires your authorization code' /tmp/steam_login.log; echo $?)
+      MOBILE_OK=$(grep -qi 'Waiting for confirmation...OK' /tmp/steam_login.log; echo $?)
+      MOBILE_TIMEOUT=$(grep -qiE 'Timed out waiting for confirmation|Timeout' /tmp/steam_login.log; echo $?)
+
+      if [ "$HAS_MOBILE" = "0" ]; then
+        # Mobile app approval path (steamcmd already waits internally)
+        if [ "$MOBILE_OK" = "0" ]; then
+          echo "[SteamCMD] Mobile confirmation approved."
+          UPDATE_LOGIN_ARGS="+login $STEAM_USERNAME"
+        elif [ "$MOBILE_TIMEOUT" = "0" ]; then
+          echo "[SteamCMD] Mobile confirmation timed out. Falling back to anonymous."
+          "$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows +login anonymous +quit || true
+          UPDATE_LOGIN_ARGS="+login anonymous"
+        else
+          echo "[SteamCMD] Mobile confirmation state unclear; using anonymous this run."
+          "$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows +login anonymous +quit || true
+          UPDATE_LOGIN_ARGS="+login anonymous"
+        fi
+
+      elif [ "$HAS_CODE" = "0" ]; then
+        # Email/2FA code flow (NOT mobile)
         echo ""
         echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
         echo "/!\\ CAREFUL! DO NOT USE YOUR PERSONAL STEAM ACCOUNT HERE."
@@ -128,33 +157,32 @@ if [ "$STEAM_LOGIN" = "1" ]; then
           STEAM_GUARD_CODE="$GUARD_CAPTURE"
           "$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows \
             +set_steam_guard_code "$STEAM_GUARD_CODE" \
-            +login "$STEAM_USERNAME" "$STEAM_PASSWORD" +quit | tee /tmp/steam_login_2.log || true
+            +login "$STEAM_USERNAME" "$STEAM_PASSWORD" +quit \
+            | tee /tmp/steam_login_2.log || true
           UPDATE_LOGIN_ARGS="+set_steam_guard_code $STEAM_GUARD_CODE +login $STEAM_USERNAME $STEAM_PASSWORD"
         else
-          echo "[SteamCMD] No guard code entered. Proceeding ANONYMOUS to avoid hanging the restart."
+          echo "[SteamCMD] No code entered. Proceeding ANONYMOUS to avoid hanging the restart."
           "$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows +login anonymous +quit || true
           UPDATE_LOGIN_ARGS="+login anonymous"
         fi
+
+      else
+        # No guard required and no obvious errors -> success
+        UPDATE_LOGIN_ARGS="+login $STEAM_USERNAME $STEAM_PASSWORD"
       fi
-    else
-      # No Steam Guard required; normal success
-      UPDATE_LOGIN_ARGS="+login $STEAM_USERNAME $STEAM_PASSWORD"
     fi
   fi
 else
-  # Explicitly logout when not using account login
+  # If user disabled account login, ensure we don't keep an old session around.
   "$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows +logout +quit || true
   "$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows +login anonymous +quit || true
   UPDATE_LOGIN_ARGS="+login anonymous"
 fi
 
-# --- Install/Update server -------------------------------------------------
+# --- Install/Update server (with whatever login we resolved) ---
+"$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows $UPDATE_LOGIN_ARGS +app_update 530870 $BETACMD $STEAMCMD +quit
 
-"$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows \
-  $UPDATE_LOGIN_ARGS +app_update 530870 $BETACMD $STEAMCMD +quit
-
-# --- runtime env -----------------------------------------------------------
-
+# Runtime env
 mkdir -p "$GAMEDIR/Logs"
 rm -f /tmp/.X1-lock
 Xvfb :1 -screen 0 800x600x24 &
@@ -177,9 +205,7 @@ if [ "$TELNET_ENABLED" = "1" ] && [ -n "$TELNET_PORT" ]; then
     while IFS= read -r line; do
       [ -z "$line" ] && continue
       if exec 3<>/dev/tcp/127.0.0.1/"$TELNET_PORT"; then
-        if [ -n "$TELNET_PASSWORD" ]; then
-          printf "%s\r\n" "$TELNET_PASSWORD" >&3
-        fi
+        [ -n "$TELNET_PASSWORD" ] && printf "%s\r\n" "$TELNET_PASSWORD" >&3
         printf "%s\r\n" "$line" >&3
         timeout 2 cat <&3 || true
         printf "exit\r\n" >&3 || true
@@ -192,6 +218,5 @@ if [ "$TELNET_ENABLED" = "1" ] && [ -n "$TELNET_PORT" ]; then
   ) < /dev/stdin &
 fi
 
-# --- launch ---------------------------------------------------------------
-
+# Start server in foreground so Wings tracks it
 exec /usr/lib/wine/wine64 ./EmpyrionDedicated.exe -batchmode -nographics -logFile Logs/current.log $EXTRA_ARGS "$@" &> Logs/wine.log
