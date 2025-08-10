@@ -37,7 +37,7 @@ seed=; [ -n "$WORLD_SEED" ] && seed="$WORLD_SEED"
 desc=; [ -n "$SRV_DESCRIPTION" ] && desc="\"$(q "$SRV_DESCRIPTION")\""
 vip=; [ -n "$PLAYER_LOGIN_VIP_NAMES" ] && vip="\"$(q "$PLAYER_LOGIN_VIP_NAMES")\""
 
-PORT_VALUE="${SERVER_PORT:-30000}"
+PORT_VALUE="${SRV_PORT:-30000}"
 
 cat > "$CFG_GEN" <<EOF
 ServerConfig:
