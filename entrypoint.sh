@@ -3,13 +3,26 @@
 export HOME=/home/container
 cd "$HOME"
 
+# ---------- Persist Steam data across rebuilds ----------
+# Use a persistent dir and symlink $HOME/Steam -> /mnt/server/steam
+PERSIST_STEAM="/mnt/server/steam"
+mkdir -p "$PERSIST_STEAM"
+
+if [ -e "$HOME/Steam" ] && [ ! -L "$HOME/Steam" ]; then
+  # Move existing Steam dir to persistent location (first run)
+  mv "$HOME/Steam" "$PERSIST_STEAM"/
+fi
+if [ ! -e "$HOME/Steam" ]; then
+  ln -s "$PERSIST_STEAM" "$HOME/Steam"
+fi
+
 # Helper for YAML escaping
 q() { printf %s "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'; }
 
 # Helper to convert 0/1 → true/false
 bool() { [ "$1" = "1" ] && echo "true" || echo "false"; }
 
-# Workshop scenario (prepare +runscript for steamcmd)
+# Workshop scenario (+runscript for steamcmd)
 if [ -n "$SCENARIO_WORKSHOP_ID" ]; then
   mkdir -p "$HOME/Steam"
   printf 'workshop_download_item 383120 %s\n' "$SCENARIO_WORKSHOP_ID" > "$HOME/Steam/add_scenario.txt"
@@ -76,23 +89,24 @@ if [ "$USE_PANEL_CONFIG" = "1" ]; then
   EXTRA_ARGS="-dedicated $(basename "$CFG_GEN")"
 fi
 
-# SteamCMD binary
+# SteamCMD binary (+ line-buffer)
 STEAMCMD_BIN="/opt/steamcmd/steamcmd.sh"
+SCMD="stdbuf -oL -eL $STEAMCMD_BIN"   # force line-by-line stdout/stderr
 
-# --- SteamCMD login flow (token -> full -> anonymous) ----------------------
+# --- SteamCMD login flow (token -> full -> anonymous) ---
 UPDATE_LOGIN_ARGS="+login anonymous"   # safe default
 LOGINUSERS="$HOME/Steam/config/loginusers.vdf"
 
 if [ "$STEAM_LOGIN" = "1" ]; then
   if [ -z "$STEAM_USERNAME" ] || [ -z "$STEAM_PASSWORD" ]; then
     echo "[SteamCMD] STEAM_LOGIN=1 but username or password is empty. Using anonymous."
-    "$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows +login anonymous +quit || true
+    $SCMD +@sSteamCmdForcePlatformType windows +login anonymous +quit || true
   else
-    # 1) Try token-based login (no password) if we look logged-in already.
+    # 1) Token-based login if we appear to have cached credentials
     TOKEN_OK=0
     if [ -f "$LOGINUSERS" ] && grep -qi "\"AccountName\"[[:space:]]*\"$STEAM_USERNAME\"" "$LOGINUSERS"; then
       echo "[SteamCMD] Attempting token login for $STEAM_USERNAME ..."
-      "$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows +login "$STEAM_USERNAME" +quit \
+      $SCMD +@sSteamCmdForcePlatformType windows +login "$STEAM_USERNAME" +quit \
         | tee /tmp/steam_token_login.log || true
 
       if ! grep -qiE 'Steam Guard|Two-factor|password|enter your password|requires your authorization code|Please confirm the login in the Steam Mobile app' /tmp/steam_token_login.log; then
@@ -104,10 +118,9 @@ if [ "$STEAM_LOGIN" = "1" ]; then
       fi
     fi
 
-    # 2) If token didn’t work, do full login with password.
+    # 2) Full login with password if token didn’t work
     if [ "$TOKEN_OK" != "1" ]; then
-      "$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows \
-        +login "$STEAM_USERNAME" "$STEAM_PASSWORD" +quit \
+      $SCMD +@sSteamCmdForcePlatformType windows +login "$STEAM_USERNAME" "$STEAM_PASSWORD" +quit \
         | tee /tmp/steam_login.log || true
 
       HAS_MOBILE=$(grep -qi 'Please confirm the login in the Steam Mobile app' /tmp/steam_login.log; echo $?)
@@ -116,17 +129,17 @@ if [ "$STEAM_LOGIN" = "1" ]; then
       MOBILE_TIMEOUT=$(grep -qiE 'Timed out waiting for confirmation|Timeout' /tmp/steam_login.log; echo $?)
 
       if [ "$HAS_MOBILE" = "0" ]; then
-        # Mobile app approval path (steamcmd already waits internally)
+        # Mobile app approval path; steamcmd already waited; just branch on result
         if [ "$MOBILE_OK" = "0" ]; then
           echo "[SteamCMD] Mobile confirmation approved."
           UPDATE_LOGIN_ARGS="+login $STEAM_USERNAME"
         elif [ "$MOBILE_TIMEOUT" = "0" ]; then
           echo "[SteamCMD] Mobile confirmation timed out. Falling back to anonymous."
-          "$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows +login anonymous +quit || true
+          $SCMD +@sSteamCmdForcePlatformType windows +login anonymous +quit || true
           UPDATE_LOGIN_ARGS="+login anonymous"
         else
           echo "[SteamCMD] Mobile confirmation state unclear; using anonymous this run."
-          "$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows +login anonymous +quit || true
+          $SCMD +@sSteamCmdForcePlatformType windows +login anonymous +quit || true
           UPDATE_LOGIN_ARGS="+login anonymous"
         fi
 
@@ -155,32 +168,32 @@ if [ "$STEAM_LOGIN" = "1" ]; then
         if [ -n "$GUARD_CAPTURE" ]; then
           echo "[SteamCMD] Got code. Retrying login..."
           STEAM_GUARD_CODE="$GUARD_CAPTURE"
-          "$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows \
+          $SCMD +@sSteamCmdForcePlatformType windows \
             +set_steam_guard_code "$STEAM_GUARD_CODE" \
             +login "$STEAM_USERNAME" "$STEAM_PASSWORD" +quit \
             | tee /tmp/steam_login_2.log || true
           UPDATE_LOGIN_ARGS="+set_steam_guard_code $STEAM_GUARD_CODE +login $STEAM_USERNAME $STEAM_PASSWORD"
         else
           echo "[SteamCMD] No code entered. Proceeding ANONYMOUS to avoid hanging the restart."
-          "$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows +login anonymous +quit || true
+          $SCMD +@sSteamCmdForcePlatformType windows +login anonymous +quit || true
           UPDATE_LOGIN_ARGS="+login anonymous"
         fi
 
       else
-        # No guard required and no obvious errors -> success
+        # No guard required
         UPDATE_LOGIN_ARGS="+login $STEAM_USERNAME $STEAM_PASSWORD"
       fi
     fi
   fi
 else
-  # If user disabled account login, ensure we don't keep an old session around.
-  "$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows +logout +quit || true
-  "$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows +login anonymous +quit || true
+  # If user disabled account login, ensure no old session lingers.
+  $SCMD +@sSteamCmdForcePlatformType windows +logout +quit || true
+  $SCMD +@sSteamCmdForcePlatformType windows +login anonymous +quit || true
   UPDATE_LOGIN_ARGS="+login anonymous"
 fi
 
-# --- Install/Update server (with whatever login we resolved) ---
-"$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows $UPDATE_LOGIN_ARGS +app_update 530870 $BETACMD $STEAMCMD +quit
+# --- Install/Update server with resolved login ---
+$SCMD +@sSteamCmdForcePlatformType windows $UPDATE_LOGIN_ARGS +app_update 530870 $BETACMD $STEAMCMD +quit
 
 # Runtime env
 mkdir -p "$GAMEDIR/Logs"
