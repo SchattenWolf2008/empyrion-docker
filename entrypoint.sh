@@ -76,9 +76,66 @@ if [ "$USE_PANEL_CONFIG" = "1" ]; then
   EXTRA_ARGS="-dedicated $(basename "$CFG_GEN")"
 fi
 
-# Install/update server
+# SteamCMD binary
 STEAMCMD_BIN="/opt/steamcmd/steamcmd.sh"
-"$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows +login anonymous +app_update 530870 $BETACMD $STEAMCMD +quit
+
+# --- Always-attempt Steam login branch (each start) ---
+UPDATE_LOGIN_ARGS="+login anonymous"   # default
+
+if [ "$STEAM_LOGIN" = "1" ]; then
+  if [ -z "$STEAM_USERNAME" ] || [ -z "$STEAM_PASSWORD" ]; then
+    echo "[SteamCMD] STEAM_LOGIN=1 but username or password is empty. Using anonymous."
+    "$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows +login anonymous +quit || true
+  else
+    # First attempt
+    "$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows \
+      +login "$STEAM_USERNAME" "$STEAM_PASSWORD" +quit | tee /tmp/steam_login.log || true
+
+    if grep -qiE 'Steam Guard|Two-factor|requires your authorization code' /tmp/steam_login.log; then
+      echo ""
+      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+      echo "/!\\ CAREFUL! DO NOT USE YOUR PERSONAL STEAM ACCOUNT HERE."
+      echo "Credentials are stored in plaintext on the server. Use a secondary account."
+      echo "You can grant access via Steam Family Sharing if needed."
+      echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+      echo ""
+      echo "[SteamCMD] Enter Steam Guard code in this console as:  STEAMCODE ABCDEF"
+      echo "[SteamCMD] Waiting up to 120 seconds for a code..."
+
+      GUARD_CAPTURE=""
+      end=$((SECONDS+120))
+      while [ $SECONDS -lt $end ]; do
+        if IFS= read -r -t 1 line; then
+          case "$line" in
+            STEAMCODE\ *) GUARD_CAPTURE="${line#STEAMCODE }"; break ;;
+          esac
+        fi
+      done
+
+      if [ -n "$GUARD_CAPTURE" ]; then
+        echo "[SteamCMD] Got code. Retrying login..."
+        STEAM_GUARD_CODE="$GUARD_CAPTURE"
+        "$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows \
+          +set_steam_guard_code "$STEAM_GUARD_CODE" \
+          +login "$STEAM_USERNAME" "$STEAM_PASSWORD" +quit | tee /tmp/steam_login_2.log || true
+        UPDATE_LOGIN_ARGS="+set_steam_guard_code $STEAM_GUARD_CODE +login $STEAM_USERNAME $STEAM_PASSWORD"
+      else
+        echo "[SteamCMD] No guard code entered. Proceeding ANONYMOUS to avoid hanging the restart."
+        "$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows +login anonymous +quit || true
+        UPDATE_LOGIN_ARGS="+login anonymous"
+      fi
+    else
+      UPDATE_LOGIN_ARGS="+login $STEAM_USERNAME $STEAM_PASSWORD"
+    fi
+  fi
+else
+  "$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows +logout +quit || true
+  "$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows +login anonymous +quit || true
+  UPDATE_LOGIN_ARGS="+login anonymous"
+fi
+
+# --- Install/Update server ---
+"$STEAMCMD_BIN" +@sSteamCmdForcePlatformType windows $UPDATE_LOGIN_ARGS +app_update 530870 $BETACMD $STEAMCMD +quit
 
 # Runtime env
 mkdir -p "$GAMEDIR/Logs"
@@ -95,31 +152,19 @@ sh -c 'until [ "`netstat -ntl | tail -n+3`" ]; do sleep 1; done
 sleep 5
 tail -F Logs/current.log ../Logs/*/*.log 2>/dev/null' &
 
-# Console → Telnet bridge (only if Telnet is enabled and port set)
+# Console → Telnet bridge
 if [ "$TELNET_ENABLED" = "1" ] && [ -n "$TELNET_PORT" ]; then
   echo "[ConsoleBridge] Forwarding panel input to Telnet at 127.0.0.1:$TELNET_PORT"
   (
-    # small warm-up so the telnet listener is ready
     sleep 6
-    # Read user input from panel console and forward per-command to Telnet
     while IFS= read -r line; do
-      # skip blanks
       [ -z "$line" ] && continue
-
-      # open TCP connection
       if exec 3<>/dev/tcp/127.0.0.1/"$TELNET_PORT"; then
-        # send password if configured
         if [ -n "$TELNET_PASSWORD" ]; then
           printf "%s\r\n" "$TELNET_PASSWORD" >&3
         fi
-        # send the command
         printf "%s\r\n" "$line" >&3
-
-        # read a short response window so the panel shows feedback
-        # (increase from 2 to 5 if you want longer output)
         timeout 2 cat <&3 || true
-
-        # close session
         printf "exit\r\n" >&3 || true
         exec 3>&- 3<&-
       else
@@ -130,5 +175,5 @@ if [ "$TELNET_ENABLED" = "1" ] && [ -n "$TELNET_PORT" ]; then
   ) < /dev/stdin &
 fi
 
-# Start server in foreground (so Wings can track it)
+# Start server in foreground
 exec /usr/lib/wine/wine64 ./EmpyrionDedicated.exe -batchmode -nographics -logFile Logs/current.log $EXTRA_ARGS "$@" &> Logs/wine.log
