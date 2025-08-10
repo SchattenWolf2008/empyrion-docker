@@ -87,7 +87,7 @@ Xvfb :1 -screen 0 800x600x24 &
 export WINEDLLOVERRIDES="mscoree,mshtml="
 export DISPLAY=:1
 
-# Tail logs & start server
+# Tail logs to panel (background)
 cd "$GAMEDIR"
 [ "$1" = "bash" ] && exec "$@"
 
@@ -95,4 +95,40 @@ sh -c 'until [ "`netstat -ntl | tail -n+3`" ]; do sleep 1; done
 sleep 5
 tail -F Logs/current.log ../Logs/*/*.log 2>/dev/null' &
 
-/usr/lib/wine/wine64 ./EmpyrionDedicated.exe -batchmode -nographics -logFile Logs/current.log $EXTRA_ARGS "$@" &> Logs/wine.log
+# Console → Telnet bridge (only if Telnet is enabled and port set)
+if [ "$TELNET_ENABLED" = "1" ] && [ -n "$TELNET_PORT" ]; then
+  echo "[ConsoleBridge] Forwarding panel input to Telnet at 127.0.0.1:$TELNET_PORT"
+  (
+    # small warm-up so the telnet listener is ready
+    sleep 6
+    # Read user input from panel console and forward per-command to Telnet
+    while IFS= read -r line; do
+      # skip blanks
+      [ -z "$line" ] && continue
+
+      # open TCP connection
+      if exec 3<>/dev/tcp/127.0.0.1/"$TELNET_PORT"; then
+        # send password if configured
+        if [ -n "$TELNET_PASSWORD" ]; then
+          printf "%s\r\n" "$TELNET_PASSWORD" >&3
+        fi
+        # send the command
+        printf "%s\r\n" "$line" >&3
+
+        # read a short response window so the panel shows feedback
+        # (increase from 2 to 5 if you want longer output)
+        timeout 2 cat <&3 || true
+
+        # close session
+        printf "exit\r\n" >&3 || true
+        exec 3>&- 3<&-
+      else
+        echo "[ConsoleBridge] Telnet connect failed (is Telnet enabled and port ${TELNET_PORT} open?)"
+        sleep 2
+      fi
+    done
+  ) < /dev/stdin &
+fi
+
+# Start server in foreground (so Wings can track it)
+exec /usr/lib/wine/wine64 ./EmpyrionDedicated.exe -batchmode -nographics -logFile Logs/current.log $EXTRA_ARGS "$@" &> Logs/wine.log
