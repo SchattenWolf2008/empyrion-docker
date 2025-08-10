@@ -26,55 +26,49 @@ if [ "$BETA" = "1" ]; then
   BETACMD="-beta experimental"
 fi
 
-# Game dir
-GAMEDIR="$HOME/Steam/steamapps/common/Empyrion - Dedicated Server/DedicatedServer"
+# Game dirs
+BASE_DIR="$HOME/Steam/steamapps/common/Empyrion - Dedicated Server"
+GAMEDIR="$BASE_DIR/DedicatedServer"
 
 # === Generate dedicated-generated.yaml from panel vars ===
-CFG_DIR="$GAMEDIR"
+CFG_DIR="$BASE_DIR"
 CFG_GEN="$CFG_DIR/dedicated-generated.yaml"
 mkdir -p "$CFG_DIR"
 
-pw=; [ -n "$SRV_PASSWORD" ] && pw="\"$(q "$SRV_PASSWORD")\""
-tnpw=; [ -n "$TELNET_PASSWORD" ] && tnpw="\"$(q "$TELNET_PASSWORD")\""
-stp=; [ -n "$SRV_STOP_PERIOD" ] && stp="$SRV_STOP_PERIOD"
-seed=; [ -n "$WORLD_SEED" ] && seed="$WORLD_SEED"
-desc=; [ -n "$SRV_DESCRIPTION" ] && desc="\"$(q "$SRV_DESCRIPTION")\""
-vip=; [ -n "$PLAYER_LOGIN_VIP_NAMES" ] && vip="\"$(q "$PLAYER_LOGIN_VIP_NAMES")\""
+{
+  echo "ServerConfig:"
+  echo "    Srv_Port: ${SRV_PORT:-30000}"
+  echo "    Srv_Name: \"$(q "$SERVER_NAME")\""
 
-PORT_VALUE="${SRV_PORT:-30000}"
+  [ -n "$SRV_PASSWORD" ] && echo "    Srv_Password: \"$(q "$SRV_PASSWORD")\""
+  echo "    Srv_MaxPlayers: ${MAX_PLAYERS}"
+  echo "    Srv_ReservePlayfields: ${SRV_RESERVE_PLAYFIELDS}"
+  [ -n "$SRV_DESCRIPTION" ] && echo "    Srv_Description: \"$(q "$SRV_DESCRIPTION")\""
+  echo "    Srv_Public: $(bool "$SRV_PUBLIC")"
+  [ -n "$SRV_STOP_PERIOD" ] && echo "    Srv_StopPeriod: ${SRV_STOP_PERIOD}"
+  echo "    Tel_Enabled: $(bool "$TELNET_ENABLED")"
+  echo "    Tel_Port: ${TELNET_PORT}"
+  [ -n "$TELNET_PASSWORD" ] && echo "    Tel_Pwd: \"$(q "$TELNET_PASSWORD")\""
+  echo "    EACActive: $(bool "$EAC_ACTIVE")"
+  echo "    MaxAllowedSizeClass: ${MAX_ALLOWED_SIZE_CLASS}"
+  echo "    AllowedBlueprints: ${ALLOWED_BLUEPRINTS}"
+  echo "    HeartbeatServer: ${HEARTBEAT_SERVER}"
+  echo "    HeartbeatClient: ${HEARTBEAT_CLIENT}"
+  echo "    LogFlags: ${LOG_FLAGS}"
+  echo "    DisableSteamFamilySharing: $(bool "$DISABLE_FAMILY_SHARING")"
+  echo "    KickPlayerWithPing: ${KICK_PLAYER_WITH_PING}"
+  echo "    TimeoutBootingPfServer: ${TIMEOUT_BOOTING_PF}"
+  echo "    PlayerLoginParallelCount: ${PLAYER_LOGIN_PARALLEL_COUNT}"
+  [ -n "$PLAYER_LOGIN_VIP_NAMES" ] && echo "    PlayerLoginVipNames: \"$(q "$PLAYER_LOGIN_VIP_NAMES")\""
+  echo "    EnableDLC: $(bool "$ENABLE_DLC")"
 
-cat > "$CFG_GEN" <<EOF
-ServerConfig:
-    Srv_Port: ${PORT_VALUE}
-    Srv_Name: "$(q "$SERVER_NAME")"
-    Srv_Password: ${pw}
-    Srv_MaxPlayers: ${MAX_PLAYERS}
-    Srv_ReservePlayfields: ${SRV_RESERVE_PLAYFIELDS}
-    Srv_Description: ${desc}
-    Srv_Public: $(bool "$SRV_PUBLIC")
-    Srv_StopPeriod: ${stp}
-    Tel_Enabled: $(bool "$TELNET_ENABLED")
-    Tel_Port: ${TELNET_PORT}
-    Tel_Pwd: ${tnpw}
-    EACActive: $(bool "$EAC_ACTIVE")
-    MaxAllowedSizeClass: ${MAX_ALLOWED_SIZE_CLASS}
-    AllowedBlueprints: ${ALLOWED_BLUEPRINTS}
-    HeartbeatServer: ${HEARTBEAT_SERVER}
-    HeartbeatClient: ${HEARTBEAT_CLIENT}
-    LogFlags: ${LOG_FLAGS}
-    DisableSteamFamilySharing: $(bool "$DISABLE_FAMILY_SHARING")
-    KickPlayerWithPing: ${KICK_PLAYER_WITH_PING}
-    TimeoutBootingPfServer: ${TIMEOUT_BOOTING_PF}
-    PlayerLoginParallelCount: ${PLAYER_LOGIN_PARALLEL_COUNT}
-    PlayerLoginVipNames: ${vip}
-    EnableDLC: $(bool "$ENABLE_DLC")
-
-GameConfig:
-    GameName: "$(q "$GAME_NAME")"
-    Mode: ${GAME_MODE}
-    Seed: ${seed}
-    CustomScenario: "$(q "$SCENARIO_NAME")"
-EOF
+  echo
+  echo "GameConfig:"
+  echo "    GameName: \"$(q "$GAME_NAME")\""
+  echo "    Mode: ${GAME_MODE}"
+  [ -n "$WORLD_SEED" ] && echo "    Seed: ${WORLD_SEED}"
+  echo "    CustomScenario: \"$(q "$SCENARIO_NAME")\""
+} > "$CFG_GEN"
 
 # Pass -dedicated only if toggle is 1
 EXTRA_ARGS=""
