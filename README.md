@@ -44,6 +44,8 @@ Before the server can access the Scenario that was downloaded via the SteamCMD W
 `/home/container/Steam/steamapps/workshop/content/`
 Here you will now find your downloaded Scenario(s), they will be named after their workshop id.
 
+# fix this tomorrow: game id, then the workshop id. Will make it to automaticly add.
+
 Now enter that directory, you will find another folder inside with some numbers. Move this file over to `/home/container/Steam/steamapps/common/Empyrion - Dedicated Server/Content/Scenarios/` and rename it to the Scenario name. (I think it only has to match with the Server Scenario Name option.)
 In Pterodactyl, you can paste this in the move option to make things easier for you:
 `../../../common/Empyrion - Dedicated Server/Content/Scenarios/SCENARIONAME`
