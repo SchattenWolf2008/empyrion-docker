@@ -32,17 +32,28 @@ CFG_GEN="$CFG_DIR/dedicated-generated.yaml"
 mkdir -p "$CFG_DIR" "$GAMEDIR/Logs"
 
 # -------- Symlinks for convenience --------
-WORKSHOP_CONTENT="$HOME/Steam/steamapps/workshop/content/"
-SCENARIOS_DIR="$BASE_DIR/Content/Scenarios/"
+
+# Make sure required directories exist before linking
+mkdir -p /home/container/Steam/steamapps/workshop/content/
+mkdir -p "/home/container/Steam/steamapps/common/Empyrion - Dedicated Server/"
+mkdir -p "/home/container/Steam/steamapps/common/Empyrion - Dedicated Server/Content/Scenarios/"
 
 # In $HOME for quick access
-ln -s "$WORKSHOP_CONTENT"   "$HOME/WorkshopContent"
-ln -s "$BASE_DIR/"           "$HOME/EmpyrionServerFolder"
-ln -s "$SCENARIOS_DIR"      "$HOME/EmpyrionScenariosFolder"
+ln -s "/home/container/Steam/steamapps/workshop/content/" \
+      "/home/container/WorkshopContent"
+
+ln -s "/home/container/Steam/steamapps/common/Empyrion - Dedicated Server/" \
+      "/home/container/EmpyrionServerFolder"
+
+ln -s "/home/container/Steam/steamapps/common/Empyrion - Dedicated Server/Content/Scenarios/" \
+      "/home/container/EmpyrionScenariosFolder"
 
 # Cross-links inside the actual dirs (both directions)
-ln -s "$SCENARIOS_DIR"      "$WORKSHOP_CONTENT/EmpyrionScenariosFolder"
-ln -s "$WORKSHOP_CONTENT"   "$SCENARIOS_DIR/WorkshopContentFolder"
+ln -s "/home/container/Steam/steamapps/common/Empyrion - Dedicated Server/Content/Scenarios/" \
+      "/home/container/Steam/steamapps/workshop/content/EmpyrionScenariosFolder"
+
+ln -s "/home/container/Steam/steamapps/workshop/content/" \
+      "/home/container/Steam/steamapps/common/Empyrion - Dedicated Server/Content/Scenarios/WorkshopContentFolder"
 
 # -------- generate dedicated-generated.yaml --------
 {
