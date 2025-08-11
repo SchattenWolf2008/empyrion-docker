@@ -31,6 +31,18 @@ CFG_DIR="$BASE_DIR"
 CFG_GEN="$CFG_DIR/dedicated-generated.yaml"
 mkdir -p "$CFG_DIR" "$GAMEDIR/Logs"
 
+# -------- link Scenarios / Workshop folder (383120) --------
+WORKSHOP_383120="$HOME/Steam/steamapps/workshop/content/383120"
+SCENARIOS_DIR="$BASE_DIR/Content/Scenarios"
+mkdir -p "$WORKSHOP_383120" "$BASE_DIR/Content"
+if [ ! -e "$SCENARIOS_DIR" ]; then
+  # Do NOT replace if it already exists; just skip to avoid side-effects.
+  ln -s "$WORKSHOP_383120/" "$SCENARIOS_DIR"
+  echo "[Symlink] Linked $SCENARIOS_DIR -> $WORKSHOP_383120/"
+else
+  echo "[Symlink] Skipped: $SCENARIOS_DIR already exists (not replacing)."
+fi
+
 # -------- generate dedicated-generated.yaml --------
 {
   echo "ServerConfig:"
