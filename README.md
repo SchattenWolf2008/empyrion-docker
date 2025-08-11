@@ -40,11 +40,17 @@ You can download Scenarios and upload them here.
 Make sure to set the name in the Option Scenario Name in the server settings, to match the name of the folder in this directory.
 
 ### Scenarios downloaded over SteamCMD Workshop
-Before the server can access the Scenario that was downloaded via the SteamCMD Workshop, you have to navigate to:
+Before you are able to download workshop content (Scenarios) from the Workshop directly via SteamCMD, you have to log in with an account.
+Then, provide the Workshop ID in the `Scenario Workshop ID` field in the server startup settings. You can find this at the end of the URL when viewing the Workshop page of that Scenario.
+Example for Reforged Eden 2 Beta: URL: `https://steamcommunity.com/workshop/filedetails/?id=3143225812`, the ID is the last part, which is `3143225812`
+The server will automaticly download the Workshop content and copy it over to the Server's Scenario folder if it doesent exist already.
+To make the server use the downloaded Scenario, make sure to copy and paste the Workshop ID into the `Scenario Name` setting. The Server will use it then.
+If you renamed the folder, you have to give it that name.
+It should not overwrite any files inside that folder if it exists already, however, I'd still recommend you to change the name if you intend to modify the Scenario files.
+
+If you downloaded the Scenario via the SteamCMD Workshop, and it wasnt moved into the directory automaticly (or was updated), you have to navigate to:
 `/home/container/Steam/steamapps/workshop/content/`
 Here you will now find your downloaded Scenario(s), they will be named after their workshop id.
-
-# fix this tomorrow: game id, then the workshop id. Will make it to automaticly add. Use workshop id and omitting the scenario name option.
 
 Now enter that directory, you will find another folder inside with some numbers. Move this file over to `/home/container/Steam/steamapps/common/Empyrion - Dedicated Server/Content/Scenarios/` and rename it to the Scenario name. (I think it only has to match with the Server Scenario Name option.)
 In Pterodactyl, you can paste this in the move option to make things easier for you:
@@ -53,6 +59,7 @@ In Pterodactyl, you can paste this in the move option to make things easier for 
 Make sure to rename SCENARIONAME with the name of the Scenario.
 
 And yeah, set the same name in the Scenario Name option and your Scenario is installed.
+(if the Scenario has been updated, SteamCMD will automaticly download the update from the Workshop. You will have to delete the Scenario from the Server's Scenario folder, to make it copy over the Scenario from the Workshop again.
 
 ## Use Panel Config Option
 This option toggles wether the server will use the dedicated.yaml file, or the dedicated-generated.yaml file.
