@@ -31,18 +31,6 @@ CFG_DIR="$BASE_DIR"
 CFG_GEN="$CFG_DIR/dedicated-generated.yaml"
 mkdir -p "$CFG_DIR" "$GAMEDIR/Logs"
 
-# -------- link Scenarios / Workshop folder (383120) --------
-WORKSHOP_383120="$HOME/Steam/steamapps/workshop/content/383120"
-SCENARIOS_DIR="$BASE_DIR/Content/Scenarios"
-mkdir -p "$WORKSHOP_383120" "$BASE_DIR/Content"
-if [ ! -e "$SCENARIOS_DIR" ]; then
-  # Do NOT replace if it already exists; just skip to avoid side-effects.
-  ln -s "$WORKSHOP_383120/" "$SCENARIOS_DIR"
-  echo "[Symlink] Linked $SCENARIOS_DIR -> $WORKSHOP_383120/"
-else
-  echo "[Symlink] Skipped: $SCENARIOS_DIR already exists (not replacing)."
-fi
-
 # -------- generate dedicated-generated.yaml --------
 {
   echo "ServerConfig:"
@@ -96,6 +84,17 @@ tail_scmd_logs_stop() { [ -n "$TAILPID" ] && kill "$TAILPID" 2>/dev/null || true
 UPDATE_LOGIN_ARGS="+login anonymous"
 
 if [ "$STEAM_LOGIN" = "1" ]; then
+  # Big warning BEFORE any login attempt
+  echo ""
+  echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+  echo "/!\\ CAREFUL! DO NOT USE YOUR PERSONAL STEAM ACCOUNT HERE."
+  echo "Credentials are stored in plaintext on the server. Use a secondary account."
+  echo "You can grant access via Steam Family Sharing if needed."
+  echo "NOTE: Please check your Steam Guard app, or enter the Steam Guard code if"
+  echo "you don't get the popup confirmation in the Steam Guard app after a few seconds."
+  echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+  echo ""
+
   if [ -z "$STEAM_USERNAME" ] || [ -z "$STEAM_PASSWORD" ]; then
     echo "[SteamCMD] STEAM_LOGIN=1 but username or password is empty. Using anonymous."
     $SCMD +@sSteamCmdForcePlatformType windows +login anonymous +quit || true
@@ -136,12 +135,6 @@ if [ "$STEAM_LOGIN" = "1" ]; then
 
       elif [ "$HAS_CODE" = "0" ]; then
         echo ""
-        echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-        echo "/!\\ CAREFUL! DO NOT USE YOUR PERSONAL STEAM ACCOUNT HERE."
-        echo "Credentials are stored in plaintext on the server. Use a secondary account."
-        echo "You can grant access via Steam Family Sharing if needed."
-        echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-        echo ""
         echo "[SteamCMD] Enter Steam Guard code in this console as:  STEAMCODE ABCDEF"
         echo "[SteamCMD] Waiting up to 120 seconds for a code..."
 
@@ -177,8 +170,28 @@ else
   UPDATE_LOGIN_ARGS="+login anonymous"
 fi
 
-# -------- Install/Update --------
+# -------- Install/Update (this also runs +runscript if set) --------
 $SCMD +@sSteamCmdForcePlatformType windows $UPDATE_LOGIN_ARGS +app_update 530870 $BETACMD $STEAMCMD +quit
+
+# -------- After workshop download: copy scenario by ID (if present) --------
+if [ -n "$SCENARIO_WORKSHOP_ID" ]; then
+  SRC="$HOME/Steam/steamapps/workshop/content/383120/$SCENARIO_WORKSHOP_ID"
+  DST_PARENT="$BASE_DIR/Content/Scenarios"
+  DST="$DST_PARENT/$SCENARIO_WORKSHOP_ID"
+
+  if [ -d "$SRC" ]; then
+    mkdir -p "$DST_PARENT"
+    if [ -d "$DST" ]; then
+      echo "[Scenario] Destination exists, skipping copy: $DST"
+    else
+      echo "[Scenario] Copying workshop scenario $SCENARIO_WORKSHOP_ID -> $DST"
+      cp -a "$SRC" "$DST"
+      echo "[Scenario] Copy complete."
+    fi
+  else
+    echo "[Scenario] Workshop folder not found for $SCENARIO_WORKSHOP_ID; skipping scenario copy."
+  fi
+fi
 
 # -------- Wine/X env --------
 rm -f /tmp/.X1-lock
