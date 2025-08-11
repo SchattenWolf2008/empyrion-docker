@@ -36,13 +36,13 @@ WORKSHOP_CONTENT="$HOME/Steam/steamapps/workshop/content/"
 SCENARIOS_DIR="$BASE_DIR/Content/Scenarios/"
 
 # In $HOME for quick access
-ln -s "$WORKSHOP_CONTENT"   "$HOME/WorkshopContent/"
-ln -s "$BASE_DIR/"           "$HOME/EmpyrionServerFolder/"
-ln -s "$SCENARIOS_DIR"      "$HOME/EmpyrionScenariosFolder/"
+ln -s "$WORKSHOP_CONTENT"   "$HOME/WorkshopContent"
+ln -s "$BASE_DIR/"           "$HOME/EmpyrionServerFolder"
+ln -s "$SCENARIOS_DIR"      "$HOME/EmpyrionScenariosFolder"
 
 # Cross-links inside the actual dirs (both directions)
-ln -s "$SCENARIOS_DIR"      "$WORKSHOP_CONTENT/EmpyrionScenariosFolder/"
-ln -s "$WORKSHOP_CONTENT"   "$SCENARIOS_DIR/WorkshopContentFolder/"
+ln -s "$SCENARIOS_DIR"      "$WORKSHOP_CONTENT/EmpyrionScenariosFolder"
+ln -s "$WORKSHOP_CONTENT"   "$SCENARIOS_DIR/WorkshopContentFolder"
 
 # -------- generate dedicated-generated.yaml --------
 {
