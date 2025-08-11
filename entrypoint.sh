@@ -31,30 +31,6 @@ CFG_DIR="$BASE_DIR"
 CFG_GEN="$CFG_DIR/dedicated-generated.yaml"
 mkdir -p "$CFG_DIR" "$GAMEDIR/Logs"
 
-# -------- Symlinks for convenience --------
-
-# Make sure required directories exist before linking
-mkdir -p /home/container/Steam/steamapps/workshop/content/
-mkdir -p "/home/container/Steam/steamapps/common/Empyrion - Dedicated Server/"
-mkdir -p "/home/container/Steam/steamapps/common/Empyrion - Dedicated Server/Content/Scenarios/"
-
-# In $HOME for quick access
-ln -s "/home/container/Steam/steamapps/workshop/content/" \
-      "/home/container/WorkshopContent"
-
-ln -s "/home/container/Steam/steamapps/common/Empyrion - Dedicated Server/" \
-      "/home/container/EmpyrionServerFolder"
-
-ln -s "/home/container/Steam/steamapps/common/Empyrion - Dedicated Server/Content/Scenarios/" \
-      "/home/container/EmpyrionScenariosFolder"
-
-# Cross-links inside the actual dirs (both directions)
-ln -s "/home/container/Steam/steamapps/common/Empyrion - Dedicated Server/Content/Scenarios/" \
-      "/home/container/Steam/steamapps/workshop/content/EmpyrionScenariosFolder"
-
-ln -s "/home/container/Steam/steamapps/workshop/content/" \
-      "/home/container/Steam/steamapps/common/Empyrion - Dedicated Server/Content/Scenarios/WorkshopContentFolder"
-
 # -------- generate dedicated-generated.yaml --------
 {
   echo "ServerConfig:"
