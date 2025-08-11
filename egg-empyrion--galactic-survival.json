@@ -1,0 +1,352 @@
+{
+    "_comment": "DO NOT EDIT: FILE GENERATED AUTOMATICALLY BY PTERODACTYL PANEL - PTERODACTYL.IO",
+    "meta": {
+        "version": "PTDL_v2",
+        "update_url": null
+    },
+    "exported_at": "2025-08-10T21:56:20-04:00",
+    "name": "Empyrion - Galactic Survival",
+    "author": "schattenwolf2008@schattenwolf2008.net",
+    "description": null,
+    "features": null,
+    "docker_images": {
+        "schattenwolf2008\/empyrion-server-pterodactyl:latest": "schattenwolf2008\/empyrion-server-pterodactyl:latest"
+    },
+    "file_denylist": [],
+    "startup": "\/bin\/bash -lc 'export HOME=\"\/home\/container\"; \\\r\nexport USE_PANEL_CONFIG=\"{{USE_PANEL_CONFIG}}\"; \\\r\nexport SRV_PORT=\"{{server.build.default.port}}\"; \\\r\nexport SERVER_NAME=\"{{SERVER_NAME}}\"; \\\r\nexport SRV_PASSWORD=\"{{SRV_PASSWORD}}\"; \\\r\nexport MAX_PLAYERS=\"{{MAX_PLAYERS}}\"; \\\r\nexport SRV_RESERVE_PLAYFIELDS=\"{{SRV_RESERVE_PLAYFIELDS}}\"; \\\r\nexport SRV_DESCRIPTION=\"{{SRV_DESCRIPTION}}\"; \\\r\nexport SRV_PUBLIC=\"{{SRV_PUBLIC}}\"; \\\r\nexport SRV_STOP_PERIOD=\"{{SRV_STOP_PERIOD}}\"; \\\r\nexport TELNET_ENABLED=\"{{TELNET_ENABLED}}\"; \\\r\nexport TELNET_PORT=\"{{TELNET_PORT}}\"; \\\r\nexport TELNET_PASSWORD=\"{{TELNET_PASSWORD}}\"; \\\r\nexport EAC_ACTIVE=\"{{EAC_ACTIVE}}\"; \\\r\nexport MAX_ALLOWED_SIZE_CLASS=\"{{MAX_ALLOWED_SIZE_CLASS}}\"; \\\r\nexport ALLOWED_BLUEPRINTS=\"{{ALLOWED_BLUEPRINTS}}\"; \\\r\nexport HEARTBEAT_SERVER=\"{{HEARTBEAT_SERVER}}\"; \\\r\nexport HEARTBEAT_CLIENT=\"{{HEARTBEAT_CLIENT}}\"; \\\r\nexport LOG_FLAGS=\"{{LOG_FLAGS}}\"; \\\r\nexport DISABLE_FAMILY_SHARING=\"{{DISABLE_FAMILY_SHARING}}\"; \\\r\nexport KICK_PLAYER_WITH_PING=\"{{KICK_PLAYER_WITH_PING}}\"; \\\r\nexport TIMEOUT_BOOTING_PF=\"{{TIMEOUT_BOOTING_PF}}\"; \\\r\nexport PLAYER_LOGIN_PARALLEL_COUNT=\"{{PLAYER_LOGIN_PARALLEL_COUNT}}\"; \\\r\nexport PLAYER_LOGIN_VIP_NAMES=\"{{PLAYER_LOGIN_VIP_NAMES}}\"; \\\r\nexport ENABLE_DLC=\"{{ENABLE_DLC}}\"; \\\r\nexport GAME_NAME=\"{{GAME_NAME}}\"; \\\r\nexport GAME_MODE=\"{{GAME_MODE}}\"; \\\r\nexport WORLD_SEED=\"{{WORLD_SEED}}\"; \\\r\nexport SCENARIO_NAME=\"{{SCENARIO_NAME}}\"; \\\r\nexport SCENARIO_WORKSHOP_ID=\"{{SCENARIO_WORKSHOP_ID}}\"; \\\r\nexport STEAM_LOGIN=\"{{STEAM_LOGIN}}\"; \\\r\nexport STEAM_USERNAME=\"{{STEAM_USERNAME}}\"; \\\r\nexport STEAM_PASSWORD=\"{{STEAM_PASSWORD}}\"; \\\r\nif [ \"{{BETA}}\" = \"1\" ]; then export BETA=1; else unset BETA; fi; \\\r\nexec \/entrypoint.sh'",
+    "config": {
+        "files": "{}",
+        "startup": "{\r\n    \"done\": \"New reserve PfServer (PID \"\r\n}",
+        "logs": "{}",
+        "stop": "saveandexit 0"
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!\/bin\/ash\r\nset -e\r\n\r\nBASE_DIR=\"\/mnt\/server\/Steam\/steamapps\/common\/Empyrion - Dedicated Server\"\r\nmkdir -p \"$BASE_DIR\"\r\n\r\ncat > \"$BASE_DIR\/dedicated.yaml\" <<'YAML'\r\n### Dedicated server settings\r\n### To use your own dedicated.yaml (e.g., \"MyDedicatedConfig.yaml\"), add \"-dedicated MyDedicatedConfig.yaml\" to the corresponding batch file\r\n\r\nServerConfig:\r\n    Srv_Port: 30000\r\n    Srv_Name: My Server\r\n    Srv_Password:                      # Only use with public servers (not for Local Coop)\r\n    Srv_MaxPlayers: 8\r\n\r\n    # Idle playfield servers held in reserve. For busy public servers, we recommend at least 2 (default = 1)\r\n    # Valid range: 0..10\r\n    Srv_ReservePlayfields: 1\r\n\r\n    ### Server description shown in Server Browser\r\n    ### max 127 chars: \"-------------------------------------------------------------------------------------------------------------------------------\"\r\n    Srv_Description: \"Server info, can contain [b]bold[\/b] text or a [u][url=empyriongame.com]link[\/url][\/u].\"\r\n\r\n    ### Set the following parameter to false (or comment the line out) if you want to hide your server in the Server Browser \r\n    ### If server is not visible you can connect via IP or via joining a friend's game.\r\n    Srv_Public: true\r\n    \r\n    ### All playfield servers will be automatically stopped every <n> real time hours. Players will get some warning messages before\r\n    Srv_StopPeriod: \r\n\r\n    ### Activate Telnet server\r\n    Tel_Enabled: false\r\n    Tel_Port: 30004\r\n    Tel_Pwd: \r\n\r\n    ### Activate Easy Anti Cheat (clients have to enable EAC via Options -> Misc to connect to a EAC protected server)\r\n    EACActive: true\r\n\r\n    ### Location of save game folder    \r\n    # SaveDirectory: Saves\r\n\r\n    ### Restrict allowed Blueprint size class: restricted types are not allowed to be produced or spawned\r\n    # 1 = allow only small blueprints, ... , 10 = allow very large blueprints, ..., 50 = allow gigantic blueprints, ... , 0 = no limits\r\n    ### Warning: large blueprints can have very strong performance impact!\r\n    MaxAllowedSizeClass: 10\r\n\r\n    ### Restrict Blueprint types allowed for production in factory\r\n    ### None      = Blueprint system completely disabled\r\n    ### StockOnly = only stock blueprints can be produced\r\n    ### All       = all types allowed (default)\r\n    AllowedBlueprints: All\r\n\r\n    ### Timeout in seconds after which a playfield server process will be killed (and all players on it disconnected) if it does no longer send heartbeat messages to the dedi \r\n    ### Set 0 to disable this feature\r\n    HeartbeatServer: 15\r\n\r\n    ### Timeout in seconds after which a client will be disconnected if it does no longer send heartbeat messages to the dedi\r\n    ### Set 0 to disable this feature\r\n    HeartbeatClient: 30\r\n\r\n    ### Enable extra log outputs (for debugging purposes)\r\n    ### Defined flags: (add together the values if more than one group should be active at the same time)\r\n    ### 0 = no extra logs\r\n    ### 1 = EAC\r\n    ### 2 = EAC_all_details (includes EAC - Note: this generates a lot of log lines)\r\n    LogFlags: 0\r\n\r\n    ### Uncomment the following line if you want to prohibit Steam Family Sharers playing (only the game owner can then play)\r\n    DisableSteamFamilySharing: True\r\n\r\n    ### Players with a ping higher than the value specified below will be locked out of the game. We recommend to not allow too high pings as this can result in player cheating\r\n    KickPlayerWithPing: 300\r\n\r\n    ### Monitors booting playfield server processes, kills them if they time out (time in seconds, 0 = disabled)\r\n    ### Note: This is a conservative default, for faster servers 60 seconds should be ok\r\n    TimeoutBootingPfServer: 90\r\n    \r\n    ### If specified, the number of parallel logins to a server are restricted to this number. This is important when you expect a big number of people to login at the same time\r\n    PlayerLoginParallelCount: 5\r\n    ### Add steam ids for preferred players that will get a better position in the login queue \" and comma seperated, e.g. \"123456789,123456788,123456787\"\r\n    PlayerLoginVipNames: \"\"\r\n\r\n    ### Enable if hosted scenario should use DLC features - NOTE: all players that want to join the server need to own the DLC\r\n    EnableDLC: false\r\n\r\n\r\nGameConfig:\r\n    GameName: DediGame                       # Determines name of the save game \r\n    Mode: Survival                           # Survival or Creative\r\n    Seed:                                    # The seed determines how the world is procedurally generated - the same seed means the same world\r\n    CustomScenario: Default Multiplayer      # Enable custom scenario. Name of custom scenario from folder Content\\Scenarios\r\n\r\n    # SharedData transfer via cloud storage\r\n    # Since the in-game transfer is slow and costs a lot of dedi server bandwidth, you can now use a cloud storage service.\r\n    #\r\n    # How to use:\r\n    # - zip the complete SharedData folder of the hosted scenario and upload the zip file to a cloud service\r\n    #   - side note: the name of the zip file doesn't matter, you can use the scenario name or add date or version info if you like\r\n    # - ! enable sharing for the uploaded file so that everyone with a sharing link can download it !\r\n    # - create the sharing link for the zip file and set it below as SharedDataURL parameter\r\n    #   - Note: when that parameter exists, the old in-game transfer is disabled\r\n    #\r\n    # Notes:\r\n    # - usually the link URL from the cloud service is a \"view URL\" => when you paste it into your browser a page opens with a Download button somewhere\r\n    # - since we need to directly download the file, we internally convert the \"view URL\" into a \"download URL\"\r\n    # - this currently works for \"Google Drive\", \"OneDrive\" (Personal variant) and DropBox\r\n    # - if you want to use another service, you need to get a \"download URL\" yourself\r\n    #   - also set that as SharedDataURL parameter but prefix it with an underscore '_' to mark it as such\r\n\r\n    # !!! Please DON'T FORGET to update the URL when you upload a new version of your zip file !!!\r\n\r\n    # Google Drive example\r\n    # SharedDataURL: https:\/\/drive.google.com\/file\/d\/1xxxxxxxxxxK\/view?usp=sharing\r\n\r\n    # Example for a \"download URL\" - notice the leading underscore character\r\n    # SharedDataURL: _https:\/\/anotherservice.com\/abc123\r\nYAML\r\n\r\necho \"Default dedicated.yaml created at: $BASE_DIR\/dedicated.yaml\"",
+            "container": "alpine:3.4",
+            "entrypoint": "ash"
+        }
+    },
+    "variables": [
+        {
+            "name": "Beta?",
+            "description": "Will add a flag to the starting options to enable beta. (This has not been tested; Beta may be enabled.)\r\n\r\nIT IS NOT RECOMMENDED TO CHANGE THIS AFTER INITIAL SERVER CREATION.",
+            "env_variable": "BETA",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|in:0,1",
+            "field_type": "text"
+        },
+        {
+            "name": "Scenario Workshop ID",
+            "description": "\/!\\ DOWNLOADING FROM WORKSHOP DOES NOT WORK WITHOUT LOGGING IN TO STEAMCMD. IT IS NOT RECOMMENDED TO CONNECT YOUR PERSONAL STEAM ACCOUNT TO THE STEAMCMD SERVER, AS LOGIN CREDENTIAL IS STORED IN PLAIN TEXT. \r\n\r\nYou can however still log in if you create a seperate steam account for the server. You can give access to games \/ workshop through family sharing, or buying the game on that account. Please keep in mind, that for free games, you will have to log in with Steam and add them to the library.\r\n\r\nTo avoid to login, you can download the Scenario from your normal Steam Workshop. Then open the game files (e.g. D:\/Programs\/Steam\/steamapps\/) and navigate to workshop\/content\/383120\/, (383120 is the game number for Empyrion) find the last created directory and upload that onto the server. Then rename the folder to the scenario name.\r\n\r\nYOU WILL HAVE TO SET THIS NAME IN SCENARIO NAME FOR THE SERVER TO USE IT. IT IS NOT RECOMMENDED TO CHANGE THIS AFTER INITIAL SERVER CREATION.\r\n\r\nThis will add a workshop id to a file to tell SteamCMD to download it on the next boot.\r\nYou can find the workshop ID of a Scenario when viewing the URL.\r\nExample for Reforged Eden 2 Beta:\r\nURL: https:\/\/steamcommunity.com\/workshop\/filedetails\/?id=3143225812\r\nID: 3143225812\r\n\r\nWhen starting up, it will download the provided workshop object. Please note that for the Server to be able to access it, you will have to manually copy the scenario over.\r\n\r\nGo to: \/home\/container\/Steam\/steamapps\/workshop\/content\/\r\nLook for the Workshop ID that you provided here. Then enter that folder.\r\nNow move the containing folder to \/home\/container\/Steam\/steamapps\/common\/Empyrion - Dedicated Server\/Content\/Scenarios\/\r\n\r\nYou can click on move and use this:\r\n\r\n..\/..\/..\/common\/Empyrion - Dedicated Server\/Content\/Scenarios\/SCENARIONAME\r\n\r\nMake sure to replace SCENARIONAME with the name of the Scenario downloaded. You will need to provide that name exactly to the Scenario Name setting in order for the server to be able to find and load it.",
+            "env_variable": "SCENARIO_WORKSHOP_ID",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|integer|min:1",
+            "field_type": "text"
+        },
+        {
+            "name": "Scenario Name",
+            "description": "Enable custom scenario. Name of custom scenario from folder\r\n\r\n\/home\/container\/Steam\/steamapps\/common\/Empyrion - Dedicated Server\/Content\/Scenarios\r\n\r\nIT IS NOT RECOMMENDED TO CHANGE THIS AFTER INITIAL SERVER CREATION.",
+            "env_variable": "SCENARIO_NAME",
+            "default_value": "Default Multiplayer",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:50",
+            "field_type": "text"
+        },
+        {
+            "name": "Server Name",
+            "description": "Server name shown in the server browser.\r\nLimit: max 60 characters (longer names are truncated).\r\nAllowed: letters (A\u2013Z, a\u2013z), numbers (0\u20139), spaces, and most punctuation (#, _, -, |, [ ]).\r\nAvoid: quotes (\" or '); avoid tabs (use spaces only).\r\nFormatting:\r\n\u2003Bold: [b]Bold Text[\/b]\r\n\u2003Underline: [u]Underlined[\/u]\r\n\u2003URL: [url=http:\/\/example.com]Clickable Text[\/url]\r\n\u2003Color: [color=red]Red Text[\/color] or [color=#ff8800]Orange[\/color]\r\nYou can combine styles:\r\n\u2003Example: [b][color=gold]\u2605 My Awesome Server \u2605[\/color][\/b]",
+            "env_variable": "SERVER_NAME",
+            "default_value": "My Server",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:60",
+            "field_type": "text"
+        },
+        {
+            "name": "Slots",
+            "description": "The maximum amount of how many players can be on the server. Adapt this number depending on your server's ressources.\r\n\r\nA rough list (this is from ChatGPT, I have no clue about it.)\r\n\r\n4 players  \u2192  4 GB RAM\r\n8 players  \u2192  6 GB RAM\r\n16 players \u2192  8 GB RAM\r\n32 players \u2192  12 GB RAM\r\n50 players \u2192  16 GB RAM\r\n64 players \u2192  20 GB RAM\r\n100 players \u2192  28 GB RAM\r\n\r\nPlease keep in mind that the server performance heavily depends on the used CPU. A CPU with atleast 3.5 GHz is recommended, look for more details online.",
+            "env_variable": "MAX_PLAYERS",
+            "default_value": "8",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|integer|min:1|max:255",
+            "field_type": "text"
+        },
+        {
+            "name": "Telnet Port",
+            "description": "Port used for remote server management via Telnet\r\n\/!\\ CAREFUL! SET A PASSWORD BEFORE EXPOSING THE PORT TO ANY NETWORK. SETTING THIS TO THE SERVER PORT (not sure if that works) WILL AUTOMATICLY EXPOSE IT. SET A PASSWORD!. (Unless you only use it within the container then no need.)",
+            "env_variable": "TELNET_PORT",
+            "default_value": "30004",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|integer|min:1|max:65535",
+            "field_type": "text"
+        },
+        {
+            "name": "Enable Telnet?",
+            "description": "Telnet is used for remote server management. Enabling this will also enable the ability to use console commands in the pterodactyl console panel.\r\n\r\n\/!\\ Careful! SET A SECURE PASSWORD BEFORE ENABLING \/ OPENING THE PORT TO ANY NETWORK",
+            "env_variable": "TELNET_ENABLED",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|in:0,1",
+            "field_type": "text"
+        },
+        {
+            "name": "Telnet Password",
+            "description": "Password required for Telnet access. PLEASE DO NOT LEAVE THIS EMPTY TO PREVENT UNAUTHORIZED ACCESS.",
+            "env_variable": "TELNET_PASSWORD",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|min:4|max:50",
+            "field_type": "text"
+        },
+        {
+            "name": "Public Server? (Show in Serverlist?)",
+            "description": "Set the following parameter to false (or comment the line out) if you want to hide your server in the Server Browser.\r\nIf server is not visible you can connect via IP or via joining a friend's game.",
+            "env_variable": "SRV_PUBLIC",
+            "default_value": "1",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|in:0,1",
+            "field_type": "text"
+        },
+        {
+            "name": "Easy Anti Cheat (EAC)",
+            "description": "Activate Easy Anti Cheat (clients have to enable EAC via Options -> Misc to connect to a EAC protected server).\r\n\r\nEasy Anti Cheat is a client-side anti-cheat system that watches out for game manipulation from the client's side, which makes using hackclients nearly impossible.",
+            "env_variable": "EAC_ACTIVE",
+            "default_value": "1",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|in:0,1",
+            "field_type": "text"
+        },
+        {
+            "name": "Max allowed size class",
+            "description": "Restrict allowed Blueprint size class: restricted types are not allowed to be produced or spawned\r\n1 = allow only small blueprints, ... , 10 = allow very large blueprints, ..., 50 = allow gigantic blueprints, ... , 0 = no limits\r\n\r\nWarning: large blueprints can have very strong performance impact!",
+            "env_variable": "MAX_ALLOWED_SIZE_CLASS",
+            "default_value": "10",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|integer|min:0|max:50",
+            "field_type": "text"
+        },
+        {
+            "name": "Allowed Blueprints",
+            "description": "Restrict Blueprint types allowed for production in factory\r\nNone = Blueprint system completely disabled\r\nStockOnly = only stock blueprints can be produced\r\nAll = all types allowed (default)",
+            "env_variable": "ALLOWED_BLUEPRINTS",
+            "default_value": "All",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|in:None,StockOnly,All",
+            "field_type": "text"
+        },
+        {
+            "name": "Heartbeat Server",
+            "description": "Timeout in seconds after which a playfield server process will be killed (and all players on it disconnected) if it does no longer send heartbeat messages to the dedi\r\nSet 0 to disable this feature",
+            "env_variable": "HEARTBEAT_SERVER",
+            "default_value": "15",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|integer|min:0|max:3600",
+            "field_type": "text"
+        },
+        {
+            "name": "Timeout Booting PF",
+            "description": "Monitors booting playfield server processes, kills them if they time out (time in seconds, 0 = disabled)\r\nNote: This is a conservative default, for faster servers 60 seconds should be ok",
+            "env_variable": "TIMEOUT_BOOTING_PF",
+            "default_value": "90",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|integer|min:0|max:600",
+            "field_type": "text"
+        },
+        {
+            "name": "Game (Save) Name",
+            "description": "Determines name of the save game.\r\n\/!\\ CAREFUL! I DO NOT RECOMMEND TO CHANGE THIS AFTER INITIAL SERVER START. YOU WILL MOST LIKELY JUST CREATE A NEW WORLD, BUT I DO NOT KNOW IF THAT CAUSES ANY ISSUES.",
+            "env_variable": "GAME_NAME",
+            "default_value": "DediGame",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|string|max:50",
+            "field_type": "text"
+        },
+        {
+            "name": "Game Mode",
+            "description": "If the server is Survival or Creative. In Creative mode, players can access an unlimited inventory with all items (by default using \"H\". This is optimal for building or testing servers, but most people prefer to play on Survival servers. (As an Admin it will still be possible to access items or other tools using console commands like im (itemmenu), gm (godmode); gm invisible (godmode invisible; gives you full access to all structures). Also, can be changed later or in game.\r\n\r\n\/!\\ May need to adjust scenario after change.",
+            "env_variable": "GAME_MODE",
+            "default_value": "Survival",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|in:Survival,Creative",
+            "field_type": "text"
+        },
+        {
+            "name": "Generator Seed",
+            "description": "Seed used to randomize generation of playfields, galaxies etc. \/!\\ DO NOT CHANGE AFTER INITIAL SERVER CREATION, OR DELETE THE WORLD AFTERWARDS TO AVOID WORLD CORRUPTION.\r\n\r\nLeave empty to auto-generate",
+            "env_variable": "WORLD_SEED",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|integer|min:0|max:2147483647",
+            "field_type": "text"
+        },
+        {
+            "name": "Server Password",
+            "description": "Only use with public servers (not for Local Coop).\r\n\r\nSetting a password here will make players require to enter it in order to join the server.\r\n\r\n\/!\\ DO NOT USE QOUTES SUCH AS \" or ' AS IT CAN MESS UP THE CONFIG.",
+            "env_variable": "SRV_PASSWORD",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:64",
+            "field_type": "text"
+        },
+        {
+            "name": "Server Reserve Playfields",
+            "description": "Idle playfield servers held in reserve. For busy public servers, we recommend at least 2 (default = 1)\r\nValid range: 0..10",
+            "env_variable": "SRV_RESERVE_PLAYFIELDS",
+            "default_value": "1",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|integer|min:0|max:10",
+            "field_type": "text"
+        },
+        {
+            "name": "Server Description",
+            "description": "Server description shown in Server Browser\r\nMax 127 chars: \"-------------------------------------------------------------------------------------------------------------------------------\"\r\nExample: \"Server info, can contain [b]bold[\/b] text or a [u][url=empyriongame.com]link[\/url][\/u].\"\r\n\r\n\/!\\ DO NOT USE QOUTES SUCH AS \" OR '. Such change will mess up the configuration.",
+            "env_variable": "SRV_DESCRIPTION",
+            "default_value": "Server info, can contain [b]bold[\/b] text or a [u][url=empyriongame.com]link[\/url][\/u].",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:127",
+            "field_type": "text"
+        },
+        {
+            "name": "Server Stop Period",
+            "description": "After how many hours the server should automaticly shut down.",
+            "env_variable": "SRV_STOP_PERIOD",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|integer|min:1|max:10000",
+            "field_type": "text"
+        },
+        {
+            "name": "Heartbeat Client",
+            "description": "Timeout in seconds after which a client will be disconnected if it does no longer send heartbeat messages to the dedi\r\nSet 0 to disable this feature",
+            "env_variable": "HEARTBEAT_CLIENT",
+            "default_value": "30",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|integer|min:0|max:3600",
+            "field_type": "text"
+        },
+        {
+            "name": "Log Flags",
+            "description": "Enable extra log outputs (for debugging purposes)\r\nDefined flags: (add together the values if more than one group should be active at the same time)\r\n0 = no extra logs\r\n1 = EAC\r\n2 = EAC_all_details (includes EAC - Note: this generates a lot of log lines)",
+            "env_variable": "LOG_FLAGS",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|integer|min:0|max:2",
+            "field_type": "text"
+        },
+        {
+            "name": "Disable Family Sharing Join",
+            "description": "Set to true if you want to prohibit Steam Family Sharers playing (only the game owner can then play)",
+            "env_variable": "DISABLE_FAMILY_SHARING",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|in:0,1",
+            "field_type": "text"
+        },
+        {
+            "name": "Kick player with ping",
+            "description": "Players with a ping higher than the value specified below will be locked out of the game. We recommend to not allow too high pings as this can result in player cheating",
+            "env_variable": "KICK_PLAYER_WITH_PING",
+            "default_value": "300",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|integer|min:0|max:10000",
+            "field_type": "text"
+        },
+        {
+            "name": "Player Login Parallel Count",
+            "description": "If specified, the number of parallel logins to a server are restricted to this number. This is important when you expect a big number of people to login at the same time",
+            "env_variable": "PLAYER_LOGIN_PARALLEL_COUNT",
+            "default_value": "5",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|integer|min:0|max:1000",
+            "field_type": "text"
+        },
+        {
+            "name": "Player Login VIP Names",
+            "description": "Add steam ids for preferred players that will get a better position in the login queue",
+            "env_variable": "PLAYER_LOGIN_VIP_NAMES",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:256",
+            "field_type": "text"
+        },
+        {
+            "name": "Enable DLC?",
+            "description": "Enable if hosted scenario should use DLC features - NOTE: all players that want to join the server need to own the DLC",
+            "env_variable": "ENABLE_DLC",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|in:0,1",
+            "field_type": "text"
+        },
+        {
+            "name": "Use Panel Config",
+            "description": "Enable to use the generated dedicated-generated.yaml instead of the default dedicated.yaml. If set to 1, the server will start with the generated configuration file based on your panel settings. Can be found in Startup section.\r\n\r\nNotes: If you want to make your changes manually, you have to disable this option and use the default empyrion config file dedicated.yaml.\r\nYou cannot directly write to the dedicated generated yaml file, it will be overwritten. Instead, you can disable this option, make changes using the settings normally, and copy and paste them into the dedicated.yaml file.",
+            "env_variable": "USE_PANEL_CONFIG",
+            "default_value": "1",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|in:0,1",
+            "field_type": "text"
+        },
+        {
+            "name": "Use Steam Account for SteamCMD Login?",
+            "description": "0 = Use anonymous SteamCMD without login\r\n1 = Use Steam account for SteamCMD login\r\nRequired for some game servers to download or update; required to download workshop content on some games.\r\n\r\n\/!\\ Make sure to have set the username and password for the Steam account. Watch out for Steam Guard verification during startup.\r\n\r\n\/!\\ WARNING AND NOTES!\r\nIT IS NOT RECOMMENDED TO CONNECT YOUR STEAM ACCOUNT TO THE STEAMCMD SERVER, AS LOGIN CREDENTIAL IS STORED IN PLAIN TEXT. \r\nYou can however still log in if you create a seperate steam account for the server.\r\n\r\nYou can give access to games \/ workshop through family sharing, or buying the game on that account. Please keep in mind, that for free games, you will have to log in with Steam and add them to the library.\r\n\r\nScenario downloads: To avoid to login, you can download the Scenario from your normal Steam Workshop. Then open the game files (e.g. D:\/Programs\/Steam\/steamapps\/) and navigate to workshop\/content\/383120\/, (383120 is the game number for Empyrion) find the last created directory and upload that onto the server. Then rename the folder to the scenario name.",
+            "env_variable": "STEAM_LOGIN",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|in:0,1",
+            "field_type": "text"
+        },
+        {
+            "name": "Steam Username",
+            "description": "Steam account username. \r\n\r\n\/!\\ CAREFUL: Do not use your personal Steam account - credentials are stored in plain text. \r\nUse a secondary account.",
+            "env_variable": "STEAM_USERNAME",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:64",
+            "field_type": "text"
+        },
+        {
+            "name": "Steam Password",
+            "description": "Steam account password. \r\n\r\n\/!\\ CAREFUL: Do not use your personal Steam account - credentials are stored in plain text. \r\nUse a secondary account.\r\n\/!\\ AVOID THE USE OF QOUTES SUCH AS \" OR ', AS THOSE CAN MESS WITH CONFIGURATION FILES",
+            "env_variable": "STEAM_PASSWORD",
+            "default_value": "",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "nullable|string|max:64",
+            "field_type": "text"
+        }
+    ]
+}
