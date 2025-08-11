@@ -31,6 +31,21 @@ CFG_DIR="$BASE_DIR"
 CFG_GEN="$CFG_DIR/dedicated-generated.yaml"
 mkdir -p "$CFG_DIR" "$GAMEDIR/Logs"
 
+# -------- Symlinks for convenience --------
+WORKSHOP_CONTENT="$HOME/Steam/steamapps/workshop/content"
+SCENARIOS_DIR="$BASE_DIR/Content/Scenarios"
+
+mkdir -p "$WORKSHOP_CONTENT" "$SCENARIOS_DIR"
+
+# In $HOME for quick access
+ln -sfn "$WORKSHOP_CONTENT"   "$HOME/WorkshopContent"
+ln -sfn "$BASE_DIR"           "$HOME/EmpyrionServerFolder"
+ln -sfn "$SCENARIOS_DIR"      "$HOME/EmpyrionScenariosFolder"
+
+# Cross-links inside the actual dirs (both directions)
+ln -sfn "$SCENARIOS_DIR"      "$WORKSHOP_CONTENT/EmpyrionScenariosFolder"
+ln -sfn "$WORKSHOP_CONTENT"   "$SCENARIOS_DIR/WorkshopContentFolder"
+
 # -------- generate dedicated-generated.yaml --------
 {
   echo "ServerConfig:"
@@ -73,17 +88,12 @@ STEAMCMD_BIN="/opt/steamcmd/steamcmd.sh"
 SCMD="stdbuf -oL -eL $STEAMCMD_BIN"   # line-buffer stdout/stderr so logs stream
 
 tail_scmd_logs_start() {
-  # SteamCMD writes a lot to its own stderr file; stream it while logging in
   SCMD_ERR="$HOME/Steam/logs/stderr.txt"
   mkdir -p "$(dirname "$SCMD_ERR")"
   : > "$SCMD_ERR" || true
-  tail -F "$SCMD_ERR" 2>/dev/null &
-  TAILPID=$!
+  tail -F "$SCMD_ERR" 2>/dev/null & TAILPID=$!
 }
-tail_scmd_logs_stop() {
-  [ -n "$TAILPID" ] && kill "$TAILPID" 2>/dev/null || true
-  unset TAILPID
-}
+tail_scmd_logs_stop() { [ -n "$TAILPID" ] && kill "$TAILPID" 2>/dev/null || true; unset TAILPID; }
 
 # -------- Steam login flow (cached -> full -> code -> anon) --------
 UPDATE_LOGIN_ARGS="+login anonymous"
@@ -93,11 +103,9 @@ if [ "$STEAM_LOGIN" = "1" ]; then
     echo "[SteamCMD] STEAM_LOGIN=1 but username or password is empty. Using anonymous."
     $SCMD +@sSteamCmdForcePlatformType windows +login anonymous +quit || true
   else
-    # 1) Try cached login EVERY time first (no vdf heuristic; simpler & reliable)
     echo "[SteamCMD] Attempting cached login for $STEAM_USERNAME ..."
     tail_scmd_logs_start
-    $SCMD +@sSteamCmdForcePlatformType windows +login "$STEAM_USERNAME" +quit \
-      | tee /tmp/steam_token_login.log || true
+    $SCMD +@sSteamCmdForcePlatformType windows +login "$STEAM_USERNAME" +quit | tee /tmp/steam_token_login.log || true
     tail_scmd_logs_stop
 
     if grep -qi 'Logging in using cached credentials' /tmp/steam_token_login.log && \
@@ -106,10 +114,8 @@ if [ "$STEAM_LOGIN" = "1" ]; then
       UPDATE_LOGIN_ARGS="+login $STEAM_USERNAME"
     else
       echo "[SteamCMD] Cached login not available. Doing full login..."
-      # 2) Full login (password). Stream logs live (incl. “Waiting for confirmation…”)
       tail_scmd_logs_start
-      $SCMD +@sSteamCmdForcePlatformType windows +login "$STEAM_USERNAME" "$STEAM_PASSWORD" +quit \
-        | tee /tmp/steam_login.log || true
+      $SCMD +@sSteamCmdForcePlatformType windows +login "$STEAM_USERNAME" "$STEAM_PASSWORD" +quit | tee /tmp/steam_login.log || true
       tail_scmd_logs_stop
 
       HAS_MOBILE=$(grep -qi 'Please confirm the login in the Steam Mobile app' /tmp/steam_login.log; echo $?)
@@ -155,10 +161,7 @@ if [ "$STEAM_LOGIN" = "1" ]; then
         if [ -n "$GUARD_CAPTURE" ]; then
           echo "[SteamCMD] Got code. Retrying login..."
           tail_scmd_logs_start
-          $SCMD +@sSteamCmdForcePlatformType windows \
-            +set_steam_guard_code "$GUARD_CAPTURE" \
-            +login "$STEAM_USERNAME" "$STEAM_PASSWORD" +quit \
-            | tee /tmp/steam_login_2.log || true
+          $SCMD +@sSteamCmdForcePlatformType windows +set_steam_guard_code "$GUARD_CAPTURE" +login "$STEAM_USERNAME" "$STEAM_PASSWORD" +quit | tee /tmp/steam_login_2.log || true
           tail_scmd_logs_stop
           UPDATE_LOGIN_ARGS="+set_steam_guard_code $GUARD_CAPTURE +login $STEAM_USERNAME $STEAM_PASSWORD"
         else
@@ -166,15 +169,12 @@ if [ "$STEAM_LOGIN" = "1" ]; then
           $SCMD +@sSteamCmdForcePlatformType windows +login anonymous +quit || true
           UPDATE_LOGIN_ARGS="+login anonymous"
         fi
-
       else
-        # No guard required, full login succeeded
         UPDATE_LOGIN_ARGS="+login $STEAM_USERNAME $STEAM_PASSWORD"
       fi
     fi
   fi
 else
-  # Explicitly go anonymous if user disabled login
   $SCMD +@sSteamCmdForcePlatformType windows +logout +quit || true
   $SCMD +@sSteamCmdForcePlatformType windows +login anonymous +quit || true
   UPDATE_LOGIN_ARGS="+login anonymous"
