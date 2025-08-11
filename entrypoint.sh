@@ -38,13 +38,13 @@ SCENARIOS_DIR="$BASE_DIR/Content/Scenarios"
 mkdir -p "$WORKSHOP_CONTENT" "$SCENARIOS_DIR"
 
 # In $HOME for quick access
-ln -sfn "$WORKSHOP_CONTENT"   "$HOME/WorkshopContent"
-ln -sfn "$BASE_DIR"           "$HOME/EmpyrionServerFolder"
-ln -sfn "$SCENARIOS_DIR"      "$HOME/EmpyrionScenariosFolder"
+ln -s "$WORKSHOP_CONTENT"   "$HOME/WorkshopContent"
+ln -s "$BASE_DIR"           "$HOME/EmpyrionServerFolder"
+ln -s "$SCENARIOS_DIR"      "$HOME/EmpyrionScenariosFolder"
 
 # Cross-links inside the actual dirs (both directions)
-ln -sfn "$SCENARIOS_DIR"      "$WORKSHOP_CONTENT/EmpyrionScenariosFolder"
-ln -sfn "$WORKSHOP_CONTENT"   "$SCENARIOS_DIR/WorkshopContentFolder"
+ln -s "$SCENARIOS_DIR"      "$WORKSHOP_CONTENT/EmpyrionScenariosFolder"
+ln -s "$WORKSHOP_CONTENT"   "$SCENARIOS_DIR/WorkshopContentFolder"
 
 # -------- generate dedicated-generated.yaml --------
 {
