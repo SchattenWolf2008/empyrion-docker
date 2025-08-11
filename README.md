@@ -58,6 +58,8 @@ When you make changes to the server settings within the Pterodactyl panel, which
 You can disable this (which removes the server launch option to use that file), if you prefer to make manual changes to the config file, or you wish to change an option that isnt covered by the settings.
 Just for your information: You can still enable Telnet and set the password and port to match what you have configured in the dedicated.yaml, to have the console commands feature, even when the Use Panel Config Option is disabled.
 
+Also, even if this option is disabled, the file will still be updated on each boot. So if you want to make manual changes, you can still copy and paste the contents of the dedicated-generated.yaml file to make the initial creation easier / have a more user friendly config generation.
+
 ### Yeah I think thats mostly it. I hope this makes things easier for you, and I'm open for suggestions (tho its unlikely I will change much here until it breaks and stops working for me).
 
 ## Below is the original description of the docker container, tho most of it isnt of much interest.
