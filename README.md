@@ -19,6 +19,8 @@ You may add the port 30004 for Telnet access, but please add a password to prote
 I added a bunch of options that you can configure while creating the server, or in the server panel in the Startup section.
 I added a bunch of comments to hopefully explain it far enough.
 
+# /!\ WARNING: I have forgot to preserve the Seed generation. So either manually set it, or dont use the panel options. Server will start without a seed.
+
 ## Console that accepts commands
 I made it so that the console connects via a telnet session to the server while still showing the logs.
 That way, you can use console commands instead of only being able to read the logs.
